@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+
+# Node (CI installs claude CLI via npm)
+node_modules/
+
+# Editor
+.vscode/
+.idea/
+
+# Claude Code local settings (per-machine permissions)
+.claude/settings.local.json

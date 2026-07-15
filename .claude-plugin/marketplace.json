@@ -1,0 +1,14 @@
+{
+  "name": "claude-learning-loop",
+  "description": "Self-improvement feedback loop for Claude Code.",
+  "owner": {
+    "name": "asaphe"
+  },
+  "plugins": [
+    {
+      "name": "learning-loop",
+      "source": "./",
+      "description": "Self-improvement feedback loop for Claude Code: capture friction at session end and codify it as durable principles."
+    }
+  ]
+}

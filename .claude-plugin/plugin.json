@@ -1,0 +1,8 @@
+{
+  "name": "learning-loop",
+  "description": "Self-improvement feedback loop for Claude Code: capture friction at session end and codify it as durable principles.",
+  "version": "1.1.0",
+  "author": {
+    "name": "asaphe"
+  }
+}
