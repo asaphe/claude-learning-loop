@@ -56,11 +56,15 @@ Run all four for every candidate — this is what makes the batch report trustwo
 
 ### 1. Pattern recurrence
 
-`Grep` the candidate's phrasing/keywords against `~/.claude/history.jsonl` (last 30 days) and against the manifest-resolved destination file(s) implied by `scope`. Record the count as `0`, `1`, or `2+`.
+`Grep` the candidate's phrasing/keywords against `~/.claude/history.jsonl` (last 30 days) and against the manifest-resolved destination file(s) implied by `scope`. Record the count as `0`, `1`, or `2+`. Sanity-check the pattern before trusting the number: a pattern broad enough to match unrelated text inflates recurrence the same way a narrow one suppresses it — if the count looks high, spot-check two matches before accepting it.
 
 ### 2. Existing-coverage check
 
-`Grep` the resolved destination file for whether the concept is already covered. Decide one of `none` (nothing related exists), `partial` (related content exists but doesn't cover this specific form), or `full` (already covered — this candidate is a duplicate).
+Search the resolved destination for the concept — then **read what you found before ruling on it.** `Grep` on the candidate's *topic* keywords, not its exact phrasing: a pattern narrower than the destination's own wording returns the same empty output as genuine absence, so a rule already stated in different words reads as `none`. For every hit, `Read` the surrounding section in full before deciding; where the grep returns nothing, widen once, and for a destination under ~15KB read it end-to-end rather than trusting the null.
+
+Decide one of `none` (nothing related exists), `partial` (related content exists but doesn't cover this specific form), or `full` (already covered — this candidate is a duplicate).
+
+Record `coverage_evidence`: the `<file>:<line>` you read that justifies the ruling, or `"read <file> in full, no match"` for a `none`. A ruling with no citation is unchecked — redo it rather than reporting it.
 
 ### 3. Severity calibration
 
