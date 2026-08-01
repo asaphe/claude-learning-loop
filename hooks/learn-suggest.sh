@@ -11,6 +11,9 @@ INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"' 2>/dev/null)
 [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "unknown" ] && exit 0
 
+# additionalContext continues the conversation; this is the harness's own re-entrancy flag, not a stamp
+STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null)
+
 # /wrap-up already produced model-curated candidates for this session — don't double-flag.
 [ -s "/tmp/claude-wrapup-${SESSION_ID}.jsonl" ] && exit 0
 
@@ -43,8 +46,10 @@ fi
 # No regex signal, but a large session may still hold model-observed learnings the regex can't see → nudge /wrap-up.
 WRAPUP_MIN_TOOLS=${LEARN_WRAPUP_MIN_TOOLS:-40}
 if [ "$TRIGGER" -eq 0 ]; then
-  if [ "${TOTAL_TOOLS:-0}" -ge "$WRAPUP_MIN_TOOLS" ]; then
-    printf '\n\033[33m[wrap-up]\033[0m substantial session (%s tool calls), no correction signals. Run \033[1m/wrap-up\033[0m before ending to capture model-observed learnings the auto-scan misses.\n' "$TOTAL_TOOLS" >&2
+  # systemMessage not additionalContext: this branch fires in every ordinary long session, and would spend a forced model turn on the plugin's weakest signal
+  if [ "${TOTAL_TOOLS:-0}" -ge "$WRAPUP_MIN_TOOLS" ] && [ "$STOP_HOOK_ACTIVE" != "true" ]; then
+    jq -n --arg msg "[wrap-up] Substantial session (${TOTAL_TOOLS} tool calls), no correction signals. Run /wrap-up before ending to capture model-observed learnings the auto-scan misses." \
+      '{systemMessage: $msg}'
   fi
   exit 0
 fi
@@ -68,10 +73,13 @@ fi
 
 NUM=$(wc -l < "$CANDIDATES_FILE" | tr -d ' ')
 if [ "$TOOL_TRIGGERED" -eq 1 ]; then
-  printf '\n\033[33m[learn]\033[0m %s signal(s) this session (incl. %s/%s tool failures). Type \033[1m/learn\033[0m next session to codify. Candidates: %s\n' "$NUM" "$FAILED_TOOLS" "$TOTAL_TOOLS" "$CANDIDATES_FILE" >&2
+  SUMMARY="${NUM} signal(s) this session (incl. ${FAILED_TOOLS}/${TOTAL_TOOLS} tool failures)"
 else
-  printf '\n\033[33m[learn]\033[0m %s correction-signal(s) this session. Type \033[1m/learn\033[0m next session to codify. Candidates: %s\n' "$NUM" "$CANDIDATES_FILE" >&2
+  SUMMARY="${NUM} correction-signal(s) this session"
 fi
-printf '\033[33m[wrap-up]\033[0m for a fuller model-observed scan, run \033[1m/wrap-up\033[0m before ending.\n' >&2
+
+# Path deliberately omitted: /learn globs for it, and naming it in-context points the model at attacker-influenceable tool-error text
+[ "$STOP_HOOK_ACTIVE" != "true" ] && jq -n --arg ctx "LEARNING LOOP: ${SUMMARY} captured. Tell the user they can run /learn to codify these, or /wrap-up for a fuller model-observed scan." \
+  '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: $ctx}}'
 
 exit 0
