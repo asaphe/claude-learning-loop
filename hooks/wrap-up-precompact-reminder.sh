@@ -9,5 +9,7 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"' 2>/dev/null)
 # Already captured this session — don't nag.
 [ -s "/tmp/claude-wrapup-${SESSION_ID}.jsonl" ] && exit 0
 
-printf '\n\033[33m[wrap-up]\033[0m context is about to be compacted — detail the model-observed scan needs may be summarized away. If this session had friction/learnings, run \033[1m/wrap-up\033[0m now to capture them first.\n' >&2
+# PreCompact takes no additionalContext -- systemMessage is its only non-blocking channel to the user
+jq -n --arg msg "[wrap-up] Context is about to be compacted — detail the model-observed scan needs may be summarized away. If this session had friction or learnings, run /wrap-up now to capture them first." \
+  '{systemMessage: $msg}'
 exit 0
