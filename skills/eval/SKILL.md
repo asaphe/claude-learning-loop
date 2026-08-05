@@ -4,7 +4,7 @@ topic: Meta / self-improvement
 description: >-
   Quality gate for the learning loop. Scores every pending learning candidate
   — from /wrap-up's file, the Stop-hook's pending file, or /learn-scan's batch
-  file — against four checks: pattern recurrence, existing-coverage, severity
+  file — against five checks: destination fit, pattern recurrence, coverage, severity
   calibration, and principle-quality. Returns one verdict per candidate (READY,
   INCIDENT_NOTE, DUPLICATE, NEEDS_INPUT, NOISE). Read-only — never writes,
   edits, or codifies. /wrap-up (proactive mode) and /learn call this
@@ -18,7 +18,7 @@ argument-hint: "[path to candidate file] | (no args = auto-discover)"
 
 # Eval — score pending candidates before they reach codification
 
-You are the **quality gate** of the learning loop. `/wrap-up` captures, you score, `/learn` codifies. Take every pending candidate from whichever files exist and score each on four dimensions, so `/wrap-up` and `/learn` can build one consolidated report instead of asking the user to judge each raw candidate themselves.
+You are the **quality gate** of the learning loop. `/wrap-up` captures, you score, `/learn` codifies. Take every pending candidate from whichever files exist and score each on five dimensions, so `/wrap-up` and `/learn` can build one consolidated report instead of asking the user to judge each raw candidate themselves.
 
 You never write, edit, or codify anything, and you never call `git`/`gh`. Read-only, in every mode.
 
@@ -36,10 +36,10 @@ Three candidate-file shapes exist. Normalize every record to one canonical shape
 
 | Source | Raw shape | Normalize |
 |---|---|---|
-| `/tmp/claude-wrapup-<id>.jsonl` (`/wrap-up`) | Leading `{header:true,...}` line, then `{quote, why, scope, severity, source, session_id, timestamp}` | Skip the header line. Carry `why`/`scope`/`severity` through as hints — checks 1-4 below confirm or revise them, they are not final. |
-| `/tmp/claude-pending-learn-<id>.jsonl` (Stop hook) | `{quote, session_id, timestamp}` | No `why`/`scope`/`severity` — derive all three during checks 1-4. |
+| `/tmp/claude-wrapup-<id>.jsonl` (`/wrap-up`) | Leading `{header:true,...}` line, then `{quote, why, scope, severity, source, session_id, timestamp}` | Skip the header line. Carry `why`/`scope`/`severity` through as hints — checks 0-4 below confirm or revise them, they are not final. |
+| `/tmp/claude-pending-learn-<id>.jsonl` (Stop hook) | `{quote, session_id, timestamp}` | No `why`/`scope`/`severity` — derive all three during checks 0-4. |
 | `/tmp/claude-pending-learn-batch-<date>.jsonl` (`/learn-scan`) | `{quote, session_id, project, timestamp}` or `{signal:"tool_failures", failed, total, session_id, project, timestamp, sample_errors}` | The `tool_failures` shape has no `quote` — synthesize one, e.g. `"<failed>/<total> tool calls failed — sample: <first line of sample_errors>"`. No `why`/`scope`/`severity` — derive. |
-| Inline `/learn <description>` or `/learn --from-history Nd` candidate — no backing file, only reachable when these checks are applied inline by `/learn`, never via standalone `/learning-loop:eval <path>` | Bare quote/pattern text, no `why`/`scope`/`severity`/`session_id`/`timestamp` | Derive `why`/`scope`/`severity` fully during checks 1-4, same as the Stop-hook shape. Use `source_file: "inline"` and the current session's `session_id`/`project`/`timestamp`. |
+| Inline `/learn <description>` or `/learn --from-history Nd` candidate — no backing file, only reachable when these checks are applied inline by `/learn`, never via standalone `/learning-loop:eval <path>` | Bare quote/pattern text, no `why`/`scope`/`severity`/`session_id`/`timestamp` | Derive `why`/`scope`/`severity` fully during checks 0-4, same as the Stop-hook shape. Use `source_file: "inline"` and the current session's `session_id`/`project`/`timestamp`. |
 
 Canonical candidate: `{id: "<source_file>:<line>", quote, why, scope, severity, source_file, source_format, session_id, project, timestamp}`.
 
@@ -50,9 +50,24 @@ Same resolution `/learn` uses — the coverage and severity checks below depend 
 1. `<repo-root>/.claude/learn-destinations.md` if you're inside a repo, else `~/.claude/learn-destinations.md`.
 2. Neither exists → tell the caller no manifest was found and stop; there's nothing to check coverage or severity against. Don't guess a path.
 
-## The four checks
+## The five checks
 
-Run all four for every candidate — this is what makes the batch report trustworthy instead of just a re-listing of raw candidates.
+Run all five for every candidate — this is what makes the batch report trustworthy instead of just a re-listing of raw candidates.
+
+### 0. Destination fit — derive before you inherit
+
+Checks 1-3 all operate on the destination the candidate's `scope` names: recurrence greps it, coverage searches it, severity calibrates against its language. **None of them can discover that the destination itself is wrong, because each is looking inside it.** A `scope` tag proposed by `/wrap-up` — or by your own first instinct — therefore survives every later check untested unless you test it here, first.
+
+Ignore the proposed `scope` and derive a tier from the candidate's **content** against the manifest. Then compare:
+
+- Same tier → `destination_fit: confirmed`, continue.
+- Different tier → `destination_fit: revised`; run checks 1-3 against *your* tier, and state in one line what the tag got wrong.
+- Two tiers genuinely fit → `destination_fit: ambiguous`, which forces `NEEDS_INPUT` regardless of how the other checks land.
+
+Two traps when comparing tiers:
+
+- **Tiers that fire identically cannot be told apart by firing behavior.** Where the manifest lists more than one always-loaded destination, "will it load?" is not a discriminator — apply whatever the manifest actually states, and treat "this rule feels important" as not a tier.
+- **A gate that will not balance is destination evidence.** If the manifest sets an anti-bloat or size constraint on a tier and the candidate cannot satisfy it without collateral edits, that is the tier rejecting the candidate — record `destination_fit: revised`, don't plan to force it through in Step G.
 
 ### 1. Pattern recurrence
 
@@ -86,12 +101,12 @@ Evaluate top-to-bottom — first matching row wins. The last row is a catch-all:
 | Verdict | Condition |
 |---|---|
 | `DUPLICATE` | coverage `full`. Recommend skip, or a one-line "sharpen existing" edit if the existing entry is stale or wrong. |
-| `NEEDS_INPUT` | 2+ plausible root causes, or 2+ plausible destinations, and guessing wrong would misfile it. Name the specific ambiguity — don't resolve it yourself. |
+| `NEEDS_INPUT` | `destination_fit: ambiguous`, or 2+ plausible root causes, and guessing wrong would misfile it. Name the specific ambiguity — don't resolve it yourself. |
 | `NOISE` | recurrence `0`, coverage `none`/`partial`, no safety-language floor, self-reported severity `low`, AND no `principle_draft` (or its draft isn't clearly generalizable on its face — a generalizable draft qualifies for `READY` instead, never `NOISE`). Genuinely not worth acting on. |
 | `READY` | `principle_draft` present, coverage `none`/`partial`, one clear destination, AND (recurrence `2+` OR clearly generalizable on its face). |
 | `INCIDENT_NOTE` | Everything else — including `principle_draft` `null`, recurrence `1`, or a self-reported severity above `low` that doesn't clear the `READY` bar. Real friction, not (yet) rule-worthy. |
 
-For every `READY` row, attach the `principle_draft`, its concrete-form bullets, and the resolved destination (tier + path, PR-required flag). For every `NEEDS_INPUT` row, attach the specific question the caller should put to the user.
+For every `READY` row, attach the `principle_draft`, its concrete-form bullets, and the resolved destination (tier + path, PR-required flag). For every `NEEDS_INPUT` row, attach the specific question the caller should put to the user. Whenever `destination_fit` came back `revised`, say so in the Destination cell (`<tier> (revised from <proposed>)`) — a silently-corrected route hides the fact that the proposing stage is miscalibrated.
 
 ## Output (return this — it IS your output, not a summary of it)
 
