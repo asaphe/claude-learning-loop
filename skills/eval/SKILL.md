@@ -71,7 +71,13 @@ Two traps when comparing tiers:
 
 ### 1. Pattern recurrence
 
-`Grep` the candidate's phrasing/keywords against `~/.claude/history.jsonl` (last 30 days) and against the manifest-resolved destination file(s) implied by `scope`. Record the count as `0`, `1`, or `2+`. Sanity-check the pattern before trusting the number: a pattern broad enough to match unrelated text inflates recurrence the same way a narrow one suppresses it — if the count looks high, spot-check two matches before accepting it.
+`Grep` the candidate's phrasing/keywords against three places, not one: `~/.claude/history.jsonl` (last 30 days), the manifest-resolved destination file(s) implied by `scope`, and the incident-note directory — the manifest's `doc:incidents` row if it defines one, else `~/.claude/docs/incidents/`. Record the count as `0`, `1`, or `2+`.
+
+**The incident-note directory is where recurrence is most likely to be provable, and it is the one a recurrence check forgets.** An `INCIDENT_NOTE` verdict *is* a recorded prior occurrence, so a candidate matching a note there is a recurrence by definition — cite the filename as the evidence. Skip that directory and the loop cannot close: the verdict that files friction as an incident note is the same verdict that hides it from the next run's count, so genuinely recurring friction stays pinned at `INCIDENT_NOTE` forever and never graduates to `READY`.
+
+**Count distinct occurrences, not matches — the three sources overlap by construction.** Filing an `INCIDENT_NOTE` copies the candidate's `quote` into the note, and that quote came from the session now sitting in `history.jsonl`, so the same single event matches in both places. Counting matches would turn one prior occurrence into `2+` and unlock `READY` on a one-off. Deduplicate before counting, and key on what the notes actually contain: **quote overlap is the primary test** — a note whose quote is a substring of a matched `history.jsonl` entry, or the reverse, is the same occurrence. Notes written before `/learn` began recording one carry no session id at all, so a session-keyed check on its own falls through silently on every older note; where a note *does* carry a `Session:` id, prefer it, since it is exact where substring matching is heuristic. Report the count as distinct occurrences and name which sources each came from, so an inflated number is visible rather than implied.
+
+Sanity-check the pattern before trusting the number: a pattern broad enough to match unrelated text inflates recurrence the same way a narrow one suppresses it — if the count looks high, spot-check two matches before accepting it.
 
 ### 2. Existing-coverage check
 
