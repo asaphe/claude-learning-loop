@@ -4,7 +4,7 @@
 set -u
 LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/learn-detect.lib.sh"
 [ -r "$LIB" ] || { echo "missing $LIB" >&2; exit 1; }
-# shellcheck source=learn-detect.lib.sh
+# shellcheck source=SCRIPTDIR/learn-detect.lib.sh
 . "$LIB"
 
 DAYS=${1:-7}

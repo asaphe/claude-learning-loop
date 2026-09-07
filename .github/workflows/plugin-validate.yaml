@@ -1,0 +1,52 @@
+name: Plugin Validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '22'
+
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      # "source": "./" makes this repo its own plugin, so one call covers both manifests; --strict also fails unrecognized fields.
+      - name: Validate manifests
+        run: claude plugin validate . --strict
+
+      - name: Shell syntax check
+        run: |
+          set -euo pipefail
+          find hooks -name '*.sh' -print0 | xargs -0 -n1 bash -n
+
+      # -x follows the sourced lib, which resolves only because the hooks carry a SCRIPTDIR-relative source directive.
+      - name: Shellcheck
+        run: |
+          set -euo pipefail
+          find hooks -name '*.sh' -print0 | xargs -0 -n1 shellcheck -x
+
+      - name: JSON syntax check
+        run: |
+          set -euo pipefail
+          find . -name '*.json' -not -path './node_modules/*' -print0 \
+            | xargs -0 -n1 python3 -c 'import json,sys; json.load(open(sys.argv[1]))'
