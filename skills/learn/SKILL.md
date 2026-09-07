@@ -109,7 +109,7 @@ Route by the tier eval already resolved (recheck against the manifest — it doe
 
 ## Step G — Edit and commit (batched per destination file)
 
-**Approved `INCIDENT_NOTE` rows write first, separately.** Each is a plain append to its Step F destination — quote, `why`, source, timestamp — not a principle codification: no anti-bloat computation, no diff-and-approval cycle beyond Step E's batch sign-off, no PR (incident-note destinations are never `pr-required`). Write them, then continue with the principle-tier edits below.
+**Approved `INCIDENT_NOTE` rows write first, separately.** Each is a plain append to its Step F destination — quote, `why`, source, timestamp, and the candidate's `session_id` on its own `Session: <id>` line (eval's recurrence check greps for that literal to dedupe; without it the note and its originating `history.jsonl` entry count as two occurrences) — not a principle codification: no anti-bloat computation, no diff-and-approval cycle beyond Step E's batch sign-off, no PR (incident-note destinations are never `pr-required`). Write them, then continue with the principle-tier edits below.
 
 **Anti-bloat invariant (always-on, no fixed ceiling).** When multiple approved candidates target the same anti-bloat-target file, treat their combined addition as ONE delta against that file — not one anti-bloat check per candidate. Measure the file with `wc -c` before editing. You MUST pair the total addition with compression(s) elsewhere in that same file yielding a net-neutral-or-negative size delta for the combined batch — compute both numbers with `wc -c`, don't estimate. If no approved candidate targets the anti-bloat file this run, skip this check entirely.
 

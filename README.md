@@ -14,6 +14,11 @@ end and codify it as durable principles.
 
 - `/learning-loop:wrap-up` — capture phase. Scans the current conversation for
   friction the passive Stop hook misses and writes candidates to `/tmp`.
+- `/learning-loop:eval` — quality gate. Scores pending candidates against five
+  checks (destination fit, pattern recurrence, existing coverage, severity
+  calibration, principle quality) and returns one verdict each. Read-only;
+  `/wrap-up` and `/learn` apply it automatically, standalone use just prints
+  the table.
 - `/learning-loop:learn` — apply phase. Turns a captured or ad-hoc signal into
   a principle and routes it to the right destination via your
   `learn-destinations.md` manifest.

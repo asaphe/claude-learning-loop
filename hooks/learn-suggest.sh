@@ -4,7 +4,7 @@
 set -u
 LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/learn-detect.lib.sh"
 [ -r "$LIB" ] || exit 0
-# shellcheck source=learn-detect.lib.sh
+# shellcheck source=SCRIPTDIR/learn-detect.lib.sh
 . "$LIB"
 
 INPUT=$(cat)

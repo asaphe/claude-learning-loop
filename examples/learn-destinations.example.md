@@ -16,6 +16,7 @@ Copy this file to `~/.claude/learn-destinations.md` and fill in the bracketed pl
 | `skill:<name>` — specific to one skill's own body | `~/.claude/skills/<name>/SKILL.md` | no | — |
 | `agent:<name>` — specific to one agent's own definition | `~/.claude/agents/<name>.md` | no | — |
 | `doc:<topic>` — a cross-session operational fact (a path, an API quirk, an account id) that doesn't belong in a rule | `~/.claude/docs/<topic>.md` | no | — |
+| `doc:incidents` — a one-off friction record from an `INCIDENT_NOTE` verdict, kept so a later recurrence can cite it rather than re-derive it | `~/.claude/docs/incidents/<date>-<slug>.md` | no | — |
 | `repo:<name>` — a rule specific to one repository | `<repo-root>/.claude/rules/<file>.md` | yes | — |
 | `team-universal` — a principle every team member's session should carry, in every repo | `<path to your team's shared rules file>` | yes | `<command that propagates this file to other repos, if you have one>` |
 
