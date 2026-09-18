@@ -2,16 +2,13 @@
 name: learn
 topic: Meta / self-improvement
 description: >-
-  Close the feedback loop. Gathers every pending learning candidate — from
-  /wrap-up's file, the Stop-hook's pending file, /learn-scan's batch file, an
-  explicit /learn <description>, and/or --from-history Nd mining — auto-runs
-  /learning-loop:eval against all of them, and presents ONE consolidated
-  report (verdict, calibrated severity, destination, principle draft per
-  candidate) gated behind ONE approval before codifying everything approved.
-  Codifies each as a *principle* (not a rule) in the right place — your
-  personal rules file, a skill body, an agent body, or a docs directory — per
-  your `learn-destinations.md` manifest. Enforces anti-bloat: every addition
-  to your anti-bloat-target file forces an existing compression. Usage -
+  Make a correction or preference stick — use for "remember that …", "I
+  prefer …", "don't do that again", or to close the feedback loop. Gathers
+  every pending learning candidate (/wrap-up, the Stop-hook, /learn-scan, an
+  explicit /learn <description>, --from-history Nd), scores them with
+  /learning-loop:eval, and after ONE approval codifies each as a principle in
+  the destination your `learn-destinations.md` manifest names, compressing an
+  existing entry for every addition to the anti-bloat target. Usage -
   /learn [description] | /learn --from-history Nd | /learn (no args =
   gather everything pending, score it, report, approve once, codify).
 user-invocable: true
