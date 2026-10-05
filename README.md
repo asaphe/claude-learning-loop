@@ -10,6 +10,13 @@ end and codify it as durable principles.
 /plugin install learning-loop@claude-learning-loop
 ```
 
+From a terminal or a setup script, no session needed:
+
+```sh
+claude plugin marketplace add asaphe/claude-learning-loop
+claude plugin install learning-loop@claude-learning-loop --scope user
+```
+
 ## Usage
 
 - `/learning-loop:wrap-up` — capture phase. Scans the current conversation for
