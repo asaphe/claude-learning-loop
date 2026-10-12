@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/learn-suggest.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/learn-suggest.sh",
+            "timeout": 30
           }
         ]
       }
@@ -17,7 +18,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/wrap-up-precompact-reminder.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/wrap-up-precompact-reminder.sh",
+            "timeout": 30
           }
         ]
       }
