@@ -17,13 +17,16 @@ TS=$(date -u +%FT%TZ)
 SINCE=$(date -u -v-"${DAYS}"d +%FT%TZ 2>/dev/null || date -u -d "-${DAYS} days" +%FT%TZ)
 LEARN_EXCLUDE_PATTERN=$(learn_exclude_pattern)
 export LEARN_EXCLUDE_PATTERN
+printf '' | grep -qE -- "${LEARN_EXCLUDE_PROJECT_PATTERN--scratchpad(-|$)}" 2>/dev/null; [ $? -eq 2 ] && echo "learning-loop: invalid LEARN_EXCLUDE_PROJECT_PATTERN, no project is skipped" >&2
 
 seen=0
 flagged=0
+skipped=0
 while IFS= read -r f; do
   seen=$((seen + 1))
   sid=$(basename "$f" .jsonl)
   proj=$(basename "$(dirname "$f")")
+  learn_excluded_project "$proj" && { skipped=$((skipped + 1)); continue; }
   recs=$(learn_user_records "$f" "$SINCE")
   cc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_CORRECTION_PATTERN" || true)
   lc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_LEARN_PATTERN" || true)
@@ -58,6 +61,6 @@ while IFS= read -r f; do
 done < <(find "$HOME"/.claude/projects -maxdepth 2 -name '*.jsonl' -type f -mtime -"$DAYS" 2>/dev/null)
 
 cnt=$(wc -l < "$OUT" | tr -d ' ')
-echo "learn-scan: ${seen} session(s) over ${DAYS}d, ${flagged} flagged, ${cnt} candidate(s)" >&2
+echo "learn-scan: ${seen} session(s) over ${DAYS}d, ${skipped} skipped as scratchpad probes, ${flagged} flagged, ${cnt} candidate(s)" >&2
 [ "$cnt" -eq 0 ] && { rm -f "$OUT"; echo "no candidates" >&2; exit 0; }
 echo "$OUT"

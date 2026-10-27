@@ -26,6 +26,7 @@ for proj_dir in "$HOME"/.claude/projects/*/; do
   fi
 done
 [ -z "$SESSION_FILE" ] && exit 0
+learn_excluded_project "$(basename "$(dirname "$SESSION_FILE")")" && exit 0
 
 TOTAL_TOOLS=$(learn_total_tools "$SESSION_FILE")
 FAILED_TOOLS=$(learn_failed_tools "$SESSION_FILE")
