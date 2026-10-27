@@ -39,6 +39,11 @@ child tab) are recorded as typed input. Set `LEARN_EXCLUDE_PATTERN` to a jq
 regex matching their opening text and both hooks skip them, e.g.
 `"env": {"LEARN_EXCLUDE_PATTERN": "^Parent "}` in `settings.json`.
 
+Sessions whose project directory comes from a Claude Code scratchpad
+(`…-scratchpad…`, where agents run throwaway probe tabs) are skipped by both
+hooks. Override with `LEARN_EXCLUDE_PROJECT_PATTERN` (an ERE matched against the
+project directory name); set it empty to scan everything.
+
 First run of `/learning-loop:learn` will offer to scaffold your
 `learn-destinations.md` from `examples/learn-destinations.example.md`
 — copy it to `~/.claude/learn-destinations.md` and fill in your own paths.

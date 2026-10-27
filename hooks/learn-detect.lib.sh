@@ -5,6 +5,12 @@
 export LEARN_CORRECTION_PATTERN='^[[:space:]]*(no[,!.]|no (i|that|you|it|don|the)|stop (doing|that)|not that|that.?s (wrong|incorrect|not (what|right))|i (said|told|meant|asked)|why (did|are|would) you|you (assumed|guessed)|did you (actually|even)|wait[,.[:space:]]|don.t (do|assume))'
 export LEARN_LEARN_PATTERN='(remember this|codify this|add (to|this).*(rule|claude)|keep happening|every (session|time)|let.s codify|always do|put this in|new rule)'
 
+learn_excluded_project() {
+  # Sessions run from a Claude Code scratchpad are agent probes, not someone's work; LEARN_EXCLUDE_PROJECT_PATTERN (ERE, empty disables) overrides.
+  local pat="${LEARN_EXCLUDE_PROJECT_PATTERN--scratchpad(-|$)}"
+  [ -n "$pat" ] && printf '%s' "$1" | grep -qE -- "$pat" 2>/dev/null
+}
+
 learn_exclude_pattern() {
   # A bad regex errors every jq select, which reads as "no corrections, ever"; fall back to no exclusion, loudly.
   [ -n "${LEARN_EXCLUDE_PATTERN:-}" ] || return 0
