@@ -15,7 +15,12 @@ learn_failed_tools() {
 
 learn_user_text() {
   # Genuine human input only — promptSource typed/queued; "system"/absent marks injected subagent <result>/tool/skill-body prose that otherwise floods /learn with false positives.
-  jq -r 'select(.type == "user" and (.promptSource == "typed" or .promptSource == "queued")) | .message.content | if type == "string" then . elif type == "array" then map(select(.type == "text") | .text) | join("\n") else empty end' "$1" 2>/dev/null
+  jq -r --arg ex "${LEARN_EXCLUDE_PATTERN:-}" 'select(.type == "user" and (.promptSource == "typed" or .promptSource == "queued")) | .message.content | (if type == "string" then . elif type == "array" then map(select(.type == "text") | .text) | join("\n") else empty end) | select($ex == "" or (test($ex) | not))' "$1" 2>/dev/null
+}
+
+learn_user_records() {
+  # learn_user_text, per message at/after $2 (ISO-8601 UTC) as TSV ts/line/text-line; LEARN_EXCLUDE_PATTERN (jq regex) drops agent-relayed prompts, which are also recorded as "typed".
+  jq -r --arg since "${2:-}" --arg ex "${LEARN_EXCLUDE_PATTERN:-}" 'select(.type == "user" and (.promptSource == "typed" or .promptSource == "queued") and ((.timestamp // "") >= $since)) | [.timestamp, input_line_number, (.message.content | if type == "string" then . elif type == "array" then map(select(.type == "text") | .text) | join("\n") else "" end)] | select(.[2] != "" and ($ex == "" or (.[2] | test($ex) | not))) | .[2] as $t | .[0:2] as $m | $t | split("\n")[] | ($m + [.]) | @tsv' "$1" 2>/dev/null
 }
 
 learn_sample_errors() {

@@ -13,6 +13,8 @@ TOOL_FAIL_RATE=${LEARN_TOOL_FAIL_RATE:-25}
 OUT="/tmp/claude-pending-learn-batch-$(date -u +%Y%m%d).jsonl"
 : > "$OUT"
 TS=$(date -u +%FT%TZ)
+# mtime only preselects files; a resumed old transcript is newer than its messages, so the window is applied per message.
+SINCE=$(date -u -v-"${DAYS}"d +%FT%TZ 2>/dev/null || date -u -d "-${DAYS} days" +%FT%TZ)
 
 seen=0
 flagged=0
@@ -20,9 +22,9 @@ while IFS= read -r f; do
   seen=$((seen + 1))
   sid=$(basename "$f" .jsonl)
   proj=$(basename "$(dirname "$f")")
-  utext=$(learn_user_text "$f")
-  cc=$(printf '%s' "$utext" | grep -ciE "$LEARN_CORRECTION_PATTERN" || true)
-  lc=$(printf '%s' "$utext" | grep -ciE "$LEARN_LEARN_PATTERN" || true)
+  recs=$(learn_user_records "$f" "$SINCE")
+  cc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_CORRECTION_PATTERN" || true)
+  lc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_LEARN_PATTERN" || true)
   total=$(learn_total_tools "$f")
   failed=$(learn_failed_tools "$f")
 
@@ -36,9 +38,13 @@ while IFS= read -r f; do
   [ "$trig" -eq 0 ] && continue
   flagged=$((flagged + 1))
 
-  printf '%s' "$utext" | grep -iE "$LEARN_CORRECTION_PATTERN|$LEARN_LEARN_PATTERN" | head -5 | while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    jq -nc --arg q "$line" --arg sid "$sid" --arg p "$proj" --arg ts "$TS" '{quote: $q, session_id: $sid, project: $p, timestamp: $ts}' >> "$OUT"
+  printf '%s\n' "$recs" | while IFS=$'\t' read -r qts qline text; do
+    [ -z "$text" ] && continue
+    printf '%s\n' "$text" | grep -qiE "$LEARN_CORRECTION_PATTERN|$LEARN_LEARN_PATTERN" || continue
+    printf '%s\t%s\t%s\n' "$qts" "$qline" "$text"
+  done | head -5 | while IFS=$'\t' read -r qts qline text; do
+    jq -nc --arg q "$text" --arg sid "$sid" --arg p "$proj" --arg ts "$qts" --arg src "$f:$qline" --arg now "$TS" \
+      '{quote: $q, session_id: $sid, project: $p, timestamp: $ts, source: $src, scanned_at: $now}' >> "$OUT"
   done
 
   if [ "$tooltrig" -eq 1 ]; then
