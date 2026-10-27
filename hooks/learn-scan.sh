@@ -16,6 +16,7 @@ TS=$(date -u +%FT%TZ)
 # mtime only preselects files; a resumed old transcript is newer than its messages, so the window is applied per message.
 SINCE=$(date -u -v-"${DAYS}"d +%FT%TZ 2>/dev/null || date -u -d "-${DAYS} days" +%FT%TZ)
 LEARN_EXCLUDE_PATTERN=$(learn_exclude_pattern)
+export LEARN_EXCLUDE_PATTERN
 
 seen=0
 flagged=0
