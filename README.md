@@ -34,6 +34,11 @@ claude plugin install learning-loop@claude-learning-loop --scope user
 - A `Stop` hook passively flags correction patterns each session; a
   `PreCompact` hook nudges `/wrap-up` before context is summarized away.
 
+Prompts another agent types into a session (an orchestrator relaying to a
+child tab) are recorded as typed input. Set `LEARN_EXCLUDE_PATTERN` to a jq
+regex matching their opening text and both hooks skip them, e.g.
+`"env": {"LEARN_EXCLUDE_PATTERN": "^Parent "}` in `settings.json`.
+
 First run of `/learning-loop:learn` will offer to scaffold your
 `learn-destinations.md` from `examples/learn-destinations.example.md`
 — copy it to `~/.claude/learn-destinations.md` and fill in your own paths.

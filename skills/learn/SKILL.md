@@ -142,7 +142,7 @@ This makes the loop visible for the whole run, not just one candidate. The user 
 {"quote": "<user correction text>", "session_id": "<id>", "timestamp": "<iso8601>"}
 ```
 
-`/tmp/claude-wrapup-<id>.jsonl` (`/wrap-up`) is a superset: a leading `{"header": true, ...}` session-metadata line, then candidates carrying extra `why`, `scope`, `severity`, and `source` fields. `/tmp/claude-pending-learn-batch-<date>.jsonl` (`/learn-scan`) adds a `project` field and an alternate `signal: "tool_failures"` shape. `/learning-loop:eval`'s Step 0 normalizes all three into one canonical shape — you don't need to hand-parse these; read eval's output instead.
+`/tmp/claude-wrapup-<id>.jsonl` (`/wrap-up`) is a superset: a leading `{"header": true, ...}` session-metadata line, then candidates carrying extra `why`, `scope`, `severity`, and `source` fields. `/tmp/claude-pending-learn-batch-<date>.jsonl` (`/learn-scan`) adds `project`, `source` (`<jsonl path>:<line>`) and `scanned_at` fields, with `timestamp` set to when the quote was typed, plus an alternate `signal: "tool_failures"` shape. `/learning-loop:eval`'s Step 0 normalizes all three into one canonical shape — you don't need to hand-parse these; read eval's output instead.
 
 After the batch is processed, delete every pending file that was fully resolved (codified, filed as an incident note, or explicitly skipped). If the user declined specific rows without a full-file decision, rewrite that file with `skipped: true` set on just those candidates so they don't re-surface next session, and leave the rest of the file's still-pending rows intact.
 
