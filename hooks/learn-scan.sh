@@ -15,6 +15,7 @@ OUT="/tmp/claude-pending-learn-batch-$(date -u +%Y%m%d).jsonl"
 TS=$(date -u +%FT%TZ)
 # mtime only preselects files; a resumed old transcript is newer than its messages, so the window is applied per message.
 SINCE=$(date -u -v-"${DAYS}"d +%FT%TZ 2>/dev/null || date -u -d "-${DAYS} days" +%FT%TZ)
+LEARN_EXCLUDE_PATTERN=$(learn_exclude_pattern)
 
 seen=0
 flagged=0
@@ -25,8 +26,8 @@ while IFS= read -r f; do
   recs=$(learn_user_records "$f" "$SINCE")
   cc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_CORRECTION_PATTERN" || true)
   lc=$(printf '%s\n' "$recs" | cut -f3- | grep -ciE "$LEARN_LEARN_PATTERN" || true)
-  total=$(learn_total_tools "$f")
-  failed=$(learn_failed_tools "$f")
+  total=$(learn_total_tools "$f" "$SINCE")
+  failed=$(learn_failed_tools "$f" "$SINCE")
 
   trig=0
   tooltrig=0
@@ -44,13 +45,14 @@ while IFS= read -r f; do
     printf '%s\t%s\t%s\n' "$qts" "$qline" "$text"
   done | head -5 | while IFS=$'\t' read -r qts qline text; do
     jq -nc --arg q "$text" --arg sid "$sid" --arg p "$proj" --arg ts "$qts" --arg src "$f:$qline" --arg now "$TS" \
-      '{quote: $q, session_id: $sid, project: $p, timestamp: $ts, source: $src, scanned_at: $now}' >> "$OUT"
+      '{quote: ($q | gsub("\\\\(?<c>[tnr\\\\])"; {"t": "\t", "n": "\n", "r": "\r", "\\": "\\"}[.c])), session_id: $sid, project: $p, timestamp: $ts, source: $src, scanned_at: $now}' >> "$OUT"
   done
 
   if [ "$tooltrig" -eq 1 ]; then
-    sample=$(learn_sample_errors "$f" 3)
-    jq -nc --arg sid "$sid" --arg p "$proj" --arg ts "$TS" --argjson n "$failed" --argjson t "$total" --arg s "$sample" \
-      '{signal: "tool_failures", failed: $n, total: $t, session_id: $sid, project: $p, timestamp: $ts, sample_errors: $s}' >> "$OUT"
+    sample=$(learn_sample_errors "$f" 3 "$SINCE")
+    last=$(learn_last_failure "$f" "$SINCE")
+    jq -nc --arg sid "$sid" --arg p "$proj" --arg ts "${last:-$TS}" --arg now "$TS" --argjson n "$failed" --argjson t "$total" --arg s "$sample" \
+      '{signal: "tool_failures", failed: $n, total: $t, session_id: $sid, project: $p, timestamp: $ts, scanned_at: $now, sample_errors: $s}' >> "$OUT"
   fi
 done < <(find "$HOME"/.claude/projects -maxdepth 2 -name '*.jsonl' -type f -mtime -"$DAYS" 2>/dev/null)
 
