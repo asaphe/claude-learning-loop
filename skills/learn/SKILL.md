@@ -75,7 +75,7 @@ Present eval's verdict table as ONE report — every candidate from every source
 
 For every row eval flagged `NEEDS_INPUT`, ask the question eval attached to it. Batch these into as few `AskUserQuestion` calls as the tool's 4-questions-per-call limit allows — one call covering up to 4 ambiguous rows, `multiSelect` where the ambiguity is "which of these destinations" rather than a single pick. If more than 4 rows need input, use the fewest additional calls needed; never one call per row when several fit together.
 
-Apply each answer to its row immediately — resolve the destination (and re-derive the verdict: a resolved ambiguity with a `principle_draft` present becomes `READY`; without one, `INCIDENT_NOTE`) before Step E. Step E's approval list and Step F's routing operate on these resolved rows, never on eval's original pre-answer `NEEDS_INPUT` state.
+Apply each answer to its row immediately — resolve the destination (and re-derive the verdict by eval's `READY` row, which the answer does not relax: a resolved ambiguity becomes `READY` only with a `principle_draft` present AND (recurrence `2+` OR the user stated the rule in their own words — an answer that names the rule counts); otherwise `INCIDENT_NOTE`) before Step E. Step E's approval list and Step F's routing operate on these resolved rows, never on eval's original pre-answer `NEEDS_INPUT` state.
 
 ## Step E — ONE approval gate
 
