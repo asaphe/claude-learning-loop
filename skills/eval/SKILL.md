@@ -108,8 +108,8 @@ Evaluate top-to-bottom — first matching row wins. The last row is a catch-all:
 |---|---|
 | `DUPLICATE` | coverage `full`. Recommend skip, or a one-line "sharpen existing" edit if the existing entry is stale or wrong. |
 | `NEEDS_INPUT` | `destination_fit: ambiguous`, or 2+ plausible root causes, and guessing wrong would misfile it. Name the specific ambiguity — don't resolve it yourself. |
-| `NOISE` | recurrence `0`, coverage `none`/`partial`, no safety-language floor, self-reported severity `low`, AND no `principle_draft` (or its draft isn't clearly generalizable on its face — a generalizable draft qualifies for `READY` instead, never `NOISE`). Genuinely not worth acting on. |
-| `READY` | `principle_draft` present, coverage `none`/`partial`, one clear destination, AND (recurrence `2+` OR clearly generalizable on its face). |
+| `NOISE` | recurrence `0`, coverage `none`/`partial`, no safety-language floor, self-reported severity `low`, AND no `principle_draft` (a candidate with a draft is `READY` or `INCIDENT_NOTE`, never `NOISE`). Genuinely not worth acting on. |
+| `READY` | `principle_draft` present, coverage `none`/`partial`, one clear destination, AND (recurrence `2+` OR the user stated the rule in their own words — an inline `/learn <description>`, or a quote that is itself a directive). A rule the model generalized from one observed outcome does not qualify: one failed run is one failed run, and codifying it turns transient noise into a standing prohibition. |
 | `INCIDENT_NOTE` | Everything else — including `principle_draft` `null`, recurrence `1`, or a self-reported severity above `low` that doesn't clear the `READY` bar. Real friction, not (yet) rule-worthy. |
 
 For every `READY` row, attach the `principle_draft`, its concrete-form bullets, and the resolved destination (tier + path, PR-required flag). For every `NEEDS_INPUT` row, attach the specific question the caller should put to the user. Whenever `destination_fit` came back `revised`, say so in the Destination cell (`<tier> (revised from <proposed>)`) — a silently-corrected route hides the fact that the proposing stage is miscalibrated.
